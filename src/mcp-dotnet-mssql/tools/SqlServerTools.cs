@@ -96,7 +96,7 @@ public static class SqlServerTools
         if (!trimmedSql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
             throw new Exception("Only SELECT queries are supported in this method.");
         if (trimmedSql.Contains(';'))
-            throw new Exception("Multiple SQL statements are not allowed.");
+            throw new Exception("Multiple SQL statements in a single request are not allowed.");
 
         if (AllowMultiDb && ValidateDbTarget(trimmedSql, database))
             conn.ChangeDatabase(database);
