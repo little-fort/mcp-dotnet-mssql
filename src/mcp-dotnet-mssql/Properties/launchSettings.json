@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "mcp-dotnet-mssql": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

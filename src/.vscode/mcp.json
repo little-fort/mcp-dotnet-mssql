@@ -2,17 +2,20 @@
     "servers": {
         "mcp-mssql": {
             "type": "stdio",
-            "command": "dotnet",
+            "command": "docker",
             "args": [
                 "run",
-                "--project",
-                "C:/Dev/repos/littlefort/mcp-dotnet-mssql/McpDotnet.SqlServer/McpDotnet.SqlServer.csproj",
+                "-i",
+                "--rm",
+                "littlefort/mcp-dotnet-mssql"
             ],
             "env": {
                 "DB_DATASOURCE": "HP-GAMING\\SQLEXPRESS",
                 "DB_INITIAL_CATALOG": "pubs",
                 "DB_USER": "mcp_user",
                 "DB_PASSWORD": "#Copilot25",
+                "DB_ALLOW_MULTI": "false",
+                "DB_ALLOW_WRITE": "false"
             }
         }
     }
