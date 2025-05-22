@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Globalization;
 using System.Text.Json;
+using System.Xml.Linq;
 
 namespace McpDotnet.SqlServer;
 
@@ -24,9 +25,9 @@ public static class SqlServerTools
     }.ConnectionString;
 
     // This is a flag to allow the agent to switch between other databases on the server
-    private static bool AllowMultiDb => (new string[] { "true", "1", "yes", "y" }).Contains(Environment.GetEnvironmentVariable("DB_ALLOW_MULTI")?.ToLower());
-
-    private static bool AllowWrite => (new string[] { "true", "1", "yes", "y" }).Contains(Environment.GetEnvironmentVariable("DB_ALLOW_WRITE")?.ToLower());
+    private static readonly string[] _confirmArr = ["true", "1", "yes", "y"];
+    private static bool AllowMultiDb => _confirmArr.Contains(Environment.GetEnvironmentVariable("DB_ALLOW_MULTI")?.ToLower());
+    private static bool AllowWrite => _confirmArr.Contains(Environment.GetEnvironmentVariable("DB_ALLOW_WRITE")?.ToLower());
 
     private static SqlConnection CreateConnection() => new SqlConnection(ConnectionString);
 
@@ -139,15 +140,32 @@ public static class SqlServerTools
         if (AllowMultiDb || string.IsNullOrWhiteSpace(sql) || string.IsNullOrWhiteSpace(database))
             return true;
 
-        // Look for patterns like [OtherDb]., OtherDb.dbo., etc. using regex
-        var pattern = @"(?i)(\[([^\]]+)\]|([a-zA-Z0-9_]+))\\.";
-        var matches = System.Text.RegularExpressions.Regex.Matches(sql, pattern);
-        var initialCatalog = Environment.GetEnvironmentVariable("DB_INITIAL_CATALOG") ?? string.Empty;
-        foreach (System.Text.RegularExpressions.Match match in matches)
+        var initialCatalog = Environment.GetEnvironmentVariable("DB_INITIAL_CATALOG");
+
+        // Extract the portion after FROM and before WHERE
+        var afterFrom = sql.Substring(sql.IndexOf("FROM", StringComparison.OrdinalIgnoreCase) + 4);
+        var tables = afterFrom;
+
+        // Trim off any trailing SQL clauses
+        var keywords = new[] { "WHERE", "GROUP BY", "ORDER BY", "HAVING", "LIMIT", "OFFSET" };
+        int cutIndex = -1;
+        foreach (var clause in keywords)
         {
-            var dbName = match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value;
-            if (!string.IsNullOrEmpty(dbName) && !dbName.Equals(initialCatalog, StringComparison.OrdinalIgnoreCase))
-                throw new Exception($"SQL statement targets database '{dbName}', which is not allowed. Only '{initialCatalog}' is permitted unless DB_ALLOW_MULTI is enabled.");
+            var idx = tables.IndexOf(clause, StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0 && (cutIndex < 0 || idx < cutIndex))
+                cutIndex = idx;
+        }
+        if (cutIndex >= 0)
+            tables = tables.Substring(0, cutIndex);
+
+        // Split into tokens by whitespace and commas
+        var tokens = tables.Split([ ' ', '\t', '\r', '\n', ',' ], StringSplitOptions.RemoveEmptyEntries);
+        foreach (var token in tokens)
+        {
+            var clean = token.Replace("[", "").Replace("]", "").Trim();
+            var parts = clean.Split('.');
+            if (parts.Length > 2 && !parts[0].Equals(initialCatalog, StringComparison.OrdinalIgnoreCase))
+                throw new Exception($"SQL statement targets database '{parts[0]}', which is not allowed. Only '{initialCatalog}' is permitted unless DB_ALLOW_MULTI is enabled.");
         }
 
         return true;
