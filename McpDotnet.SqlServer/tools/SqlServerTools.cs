@@ -90,15 +90,15 @@ public static class SqlServerTools
         using var conn = CreateConnection();
         await conn.OpenAsync();
 
-        if (AllowMultiDb && database != null && database != Environment.GetEnvironmentVariable("DB_INITIAL_CATALOG"))
-            conn.ChangeDatabase(database);
-
         // Enforce only a single SELECT statement
         var trimmedSql = sql.Trim();
         if (!trimmedSql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
             throw new Exception("Only SELECT queries are supported in this method.");
-        if (trimmedSql.Contains(";"))
+        if (trimmedSql.Contains(';'))
             throw new Exception("Multiple SQL statements are not allowed.");
+
+        if (AllowMultiDb && ValidateDbTarget(trimmedSql, database))
+            conn.ChangeDatabase(database);
 
         var result = await conn.QueryAsync(trimmedSql);
 
@@ -113,21 +113,43 @@ public static class SqlServerTools
     [McpServerTool, Description("Execute a non-SELECT SQL query and return the number of affected rows.")]
     public static async Task<string> ExecuteNonSelect([Description("The raw SQL query that should be executed.")] string sql, [Description("The name of the database to perform the SQL operation in.")] string? database = null)
     {
+        if (!AllowWrite)
+            throw new Exception("Method not allowed in current configuration. Set DB_ALLOW_WRITE to 'true' to allow this method.");
+
         using var conn = CreateConnection();
         await conn.OpenAsync();
         
-        if (AllowMultiDb && database != null && database != Environment.GetEnvironmentVariable("DB_INITIAL_CATALOG"))
-            conn.ChangeDatabase(database);
-
         // Enforce only a single non-SELECT statement
         var trimmedSql = sql.Trim();
         if (trimmedSql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
             throw new Exception("Only non-SELECT queries are supported in this method.");
-        if (trimmedSql.Contains(";"))
+        if (trimmedSql.Contains(';'))
             throw new Exception("Multiple SQL statements are not allowed.");
+
+        if (AllowMultiDb && ValidateDbTarget(trimmedSql, database))
+            conn.ChangeDatabase(database);
 
         // For non-SELECT queries, return the number of affected rows
         var affectedRows = await conn.ExecuteAsync(trimmedSql);
         return JsonSerializer.Serialize(new { affectedRows });
+    }
+
+    private static bool ValidateDbTarget(string sql, string? database)
+    {
+        if (AllowMultiDb || string.IsNullOrWhiteSpace(sql) || string.IsNullOrWhiteSpace(database))
+            return true;
+
+        // Look for patterns like [OtherDb]., OtherDb.dbo., etc. using regex
+        var pattern = @"(?i)(\[([^\]]+)\]|([a-zA-Z0-9_]+))\\.";
+        var matches = System.Text.RegularExpressions.Regex.Matches(sql, pattern);
+        var initialCatalog = Environment.GetEnvironmentVariable("DB_INITIAL_CATALOG") ?? string.Empty;
+        foreach (System.Text.RegularExpressions.Match match in matches)
+        {
+            var dbName = match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value;
+            if (!string.IsNullOrEmpty(dbName) && !dbName.Equals(initialCatalog, StringComparison.OrdinalIgnoreCase))
+                throw new Exception($"SQL statement targets database '{dbName}', which is not allowed. Only '{initialCatalog}' is permitted unless DB_ALLOW_MULTI is enabled.");
+        }
+
+        return true;
     }
 }
