@@ -1,6 +1,6 @@
 # .NET MCP Server for Microsoft SQL Server
 
-**mcp-dotnet-mssql** is a Model Context Protocol (MCP) server implementation for Microsoft SQL Server, built on .NET 9. It enables clients to interact with SQL Server databases via the MCP JSON-RPC API, providing schema introspection, query execution, and data streaming capabilities for agentic LLM tools.
+**mcp-dotnet-mssql** is a Model Context Protocol (MCP) server implementation for Microsoft SQL Server, built on .NET&nbsp;9. It enables clients to interact with SQL Server databases via the MCP JSON-RPC API, providing schema introspection, query execution, and data streaming capabilities for agentic LLM tools.
 
 ## Features
 
