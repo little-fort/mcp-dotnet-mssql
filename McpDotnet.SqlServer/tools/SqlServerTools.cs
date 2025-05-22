@@ -26,6 +26,8 @@ public static class SqlServerTools
     // This is a flag to allow the agent to switch between other databases on the server
     private static bool AllowMultiDb => (new string[] { "true", "1", "yes", "y" }).Contains(Environment.GetEnvironmentVariable("DB_ALLOW_MULTI")?.ToLower());
 
+    private static bool AllowWrite => (new string[] { "true", "1", "yes", "y" }).Contains(Environment.GetEnvironmentVariable("DB_ALLOW_WRITE")?.ToLower());
+
     private static SqlConnection CreateConnection() => new SqlConnection(ConnectionString);
 
     [McpServerTool, Description("Get the list of available databases on the server.")]
@@ -47,7 +49,7 @@ public static class SqlServerTools
         using var conn = CreateConnection();
         await conn.OpenAsync();
 
-        if (AllowMultiDb && database != null)
+        if (AllowMultiDb && database != null && database != Environment.GetEnvironmentVariable("DB_INITIAL_CATALOG"))
             conn.ChangeDatabase(database);
 
         var tables = await conn.QueryAsync<string>("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'");
@@ -61,7 +63,7 @@ public static class SqlServerTools
         using var conn = CreateConnection();
         await conn.OpenAsync();
 
-        if (AllowMultiDb && database != null)
+        if (AllowMultiDb && database != null && database != Environment.GetEnvironmentVariable("DB_INITIAL_CATALOG"))
             conn.ChangeDatabase(database);
 
         // Check if table exists
@@ -83,11 +85,13 @@ public static class SqlServerTools
     }
 
     [McpServerTool, Description("Execute a SELECT SQL query and return the result in CSV format.")]
-    public static async Task<string> ExecuteSelect([Description("The name of the database to perform the SQL operation in.")] string database, [Description("The raw SQL query that should be executed.")] string sql)
+    public static async Task<string> ExecuteSelect([Description("The raw SQL query that should be executed.")] string sql, [Description("The name of the database to perform the SQL operation in.")] string? database = null)
     {
         using var conn = CreateConnection();
         await conn.OpenAsync();
-        conn.ChangeDatabase(database);
+
+        if (AllowMultiDb && database != null && database != Environment.GetEnvironmentVariable("DB_INITIAL_CATALOG"))
+            conn.ChangeDatabase(database);
 
         // Enforce only a single SELECT statement
         var trimmedSql = sql.Trim();
@@ -107,11 +111,13 @@ public static class SqlServerTools
     }
 
     [McpServerTool, Description("Execute a non-SELECT SQL query and return the number of affected rows.")]
-    public static async Task<string> ExecuteNonSelect([Description("The name of the database to perform the SQL operation in.")] string database, [Description("The raw SQL query that should be executed.")] string sql)
+    public static async Task<string> ExecuteNonSelect([Description("The raw SQL query that should be executed.")] string sql, [Description("The name of the database to perform the SQL operation in.")] string? database = null)
     {
         using var conn = CreateConnection();
         await conn.OpenAsync();
-        conn.ChangeDatabase(database);
+        
+        if (AllowMultiDb && database != null && database != Environment.GetEnvironmentVariable("DB_INITIAL_CATALOG"))
+            conn.ChangeDatabase(database);
 
         // Enforce only a single non-SELECT statement
         var trimmedSql = sql.Trim();
