@@ -72,7 +72,7 @@ You can then connect your MCP-compatible client to the project like so:
 
 ### Docker
 
-The server is also available as a [Docker image](https://hub.docker.com/r/littlefort/mcp-dotnet-mssql) and can be connected to your client like so:
+The server is also available as a [Docker image](https://hub.docker.com/r/littlefort/mcp-dotnet-mssql):
 
 ```json
 "mcp-dotnet-mssql": {
