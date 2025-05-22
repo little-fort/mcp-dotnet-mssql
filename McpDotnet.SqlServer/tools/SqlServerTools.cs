@@ -89,10 +89,14 @@ public static class SqlServerTools
         await conn.OpenAsync();
         conn.ChangeDatabase(database);
 
-        if (!sql.StartsWith("SELECT"))
+        // Enforce only a single SELECT statement
+        var trimmedSql = sql.Trim();
+        if (!trimmedSql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
             throw new Exception("Only SELECT queries are supported in this method.");
+        if (trimmedSql.Contains(";"))
+            throw new Exception("Multiple SQL statements are not allowed.");
 
-        var result = await conn.QueryAsync(sql);
+        var result = await conn.QueryAsync(trimmedSql);
 
         // Convert the result to CSV format for improved processing
         var csv = new StringWriter();
@@ -109,11 +113,15 @@ public static class SqlServerTools
         await conn.OpenAsync();
         conn.ChangeDatabase(database);
 
-        if (sql.StartsWith("SELECT"))
+        // Enforce only a single non-SELECT statement
+        var trimmedSql = sql.Trim();
+        if (trimmedSql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
             throw new Exception("Only non-SELECT queries are supported in this method.");
+        if (trimmedSql.Contains(";"))
+            throw new Exception("Multiple SQL statements are not allowed.");
 
         // For non-SELECT queries, return the number of affected rows
-        var affectedRows = await conn.ExecuteAsync(sql);
+        var affectedRows = await conn.ExecuteAsync(trimmedSql);
         return JsonSerializer.Serialize(new { affectedRows });
     }
 }
