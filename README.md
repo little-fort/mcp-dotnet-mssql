@@ -70,6 +70,8 @@ You can then connect your MCP-compatible client to the project like so:
 }
 ```
 
+NOTE: Running the source locally requires the .NET 9 SDK to be installed.
+
 ### Docker
 
 The server is also available as a [Docker image](https://hub.docker.com/r/littlefort/mcp-dotnet-mssql):
@@ -98,7 +100,7 @@ The server is also available as a [Docker image](https://hub.docker.com/r/little
 
 The server makes use of the following environment variables:
 
-- `DB_DATASOURCE` - The machine name or IP address of your target MS SQL Server instance.
+- `DB_DATASOURCE` - The machine name, IP address, or host URL of your target MS SQL Server instance.
 - `DB_INITIAL_CATALOG` - The default database that should be used when opening a connection.
 - `DB_USER` - The username used to open the database connection.
 - `DB_PASSWORD` - The password used to open the database connection.
