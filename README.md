@@ -6,7 +6,7 @@
 
 - Support for direct connections to Microsoft SQL Server
 - Dynamic schema and metadata introspection
-- CSV export of query results for improved performance
+- CSV export of query results for improved performance over JSON
 - Configurable permissions for write access and database visibility
 
 ## Usage
