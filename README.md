@@ -5,7 +5,6 @@
 ## Features
 
 - Support for direct connections to Microsoft SQL Server
-- Secure authentication with SQL Server or Azure Active Directory
 - Dynamic schema and metadata introspection
 - CSV export of query results for improved performance
 - Configurable permissions for write access and database visibility
