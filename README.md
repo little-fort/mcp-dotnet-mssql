@@ -27,8 +27,8 @@ Connect any MCP-compatible client to the server binary like so:
         "DB_INITIAL_CATALOG": "MyDatabase",
         "DB_USER": "user",
         "DB_PASSWORD": "password",
-        "DB_ALLOW_MULTI": false,
-        "DB_ALLOW_WRITE": false
+        "DB_ALLOW_MULTI": "false",
+        "DB_ALLOW_WRITE": "false"
     }
 }
 ```
@@ -65,8 +65,32 @@ You can then connect your MCP-compatible client to the project like so:
         "DB_INITIAL_CATALOG": "MyDatabase",
         "DB_USER": "user",
         "DB_PASSWORD": "password",
-        "DB_ALLOW_MULTI": false,
-        "DB_ALLOW_WRITE": false
+        "DB_ALLOW_MULTI": "false",
+        "DB_ALLOW_WRITE": "false"
+    }
+}
+```
+
+### Docker
+
+The server is also available as a [Docker image](https://hub.docker.com/r/littlefort/mcp-dotnet-mssql) and can be connected to your client like so:
+
+```json
+"mcp-dotnet-mssql": {
+    "command": "docker",
+    "args": [
+        "run",
+        "-i",
+        "--rm",
+        "littlefort/mcp-dotnet-mssql"
+    ],
+    "env": {
+        "DB_DATASOURCE": "localhost",
+        "DB_INITIAL_CATALOG": "MyDatabase",
+        "DB_USER": "user",
+        "DB_PASSWORD": "password",
+        "DB_ALLOW_MULTI": "false",
+        "DB_ALLOW_WRITE": "false"
     }
 }
 ```
